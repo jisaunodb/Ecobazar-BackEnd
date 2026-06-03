@@ -13,11 +13,17 @@ let registratinController = async (req,res)=>{
    let users = await existingData(res,{email: email})
 
    if (users){
-    return res.send({message: "User allready exist"})
+    return res.send({
+        success: false,
+        message: "User allready exist"
+    })
    }
 
     if(!terms){
-       return res.send({message: "please accecpt our terms and condition"})
+       return res.send({
+        success: false,
+        message: "please accecpt our terms and condition"
+    })
     }
 
 
@@ -25,7 +31,10 @@ let registratinController = async (req,res)=>{
     empyfieldvalidation(res,email,password,confirmPassword)
 
     if(password !== confirmPassword){
-        return res.send({message : "password not matched"})
+        return res.send({
+            success: false,
+            message : "password not matched"
+        })
     }
 
     const hash = bcrypt.hashSync(password, 10);
@@ -61,7 +70,10 @@ let registratinController = async (req,res)=>{
 
 
 
-    res.send({message: "Registration Successfull"})
+    res.send({
+        success: true,
+        message: "Registration Successfull, Please Check Your Email For Verification"
+    })
 
 }
 
@@ -72,17 +84,26 @@ let loginController = async (req,res) =>{
    let users = await User.findOne({email:email})
 
    if (!users){
-    return res.send({message: "User Not Found"})
+    return res.send({
+        success: false,
+        message: "User Not Found"
+    })
    }
 
    empyfieldvalidation(res,email,password)
 
     let passwords =  bcrypt.compareSync(password, users.password)
    if(!passwords){
-        return res.send({message:"Invalid Credential"})
+        return res.send({
+            success: false,
+            message:"Invalid Credential"
+        })
    }
 
-   res.send({message: "login successfull"})
+   res.send({
+    success: true,
+    message: "login successfull"
+})
 }
 
 let forgotpasswordController = async (req,res) =>{
@@ -92,7 +113,10 @@ let forgotpasswordController = async (req,res) =>{
      let users = await User.findOne({email: email})
 
    if (!users){
-    return res.send({message: "User Not Found"})
+    return res.send({
+        success: false,
+        message: "User Not Found"
+    })
    }
 
    let token =  tokenGenerator({
@@ -106,7 +130,10 @@ let forgotpasswordController = async (req,res) =>{
     resetpasswordMail(token,email)
 
 
-    res.send({message: "Please check your email"})
+    res.send({
+        success: true,
+        message: "Please check your email"
+    })
 }
 
 let resetpasswordController = async(req,res)=>{
@@ -117,7 +144,10 @@ let resetpasswordController = async(req,res)=>{
 
 
     if(newPassword !== confirmPassword){
-        return res.send({message:"confirm password not matched"})
+        return res.send({
+            success: false,
+            message:"confirm password not matched"
+        })
     }
 
      jwt.verify(token, process.env.ACCESSE_TOKEN_SWCRET, async function(err, decoded) {
@@ -126,13 +156,17 @@ let resetpasswordController = async(req,res)=>{
 
         if(err){
             res.send({
+                success: false,
                 massage: "unauthorized"
             })
         }else{
               const hash = bcrypt.hashSync(newPassword, 10);
               const updatedata = await User.findByIdAndUpdate({_id: decoded.id},{password: hash},{new : true})
 
-              res.send({message: "Password Updated"})
+              res.send({
+                success: true,
+                message: "Password Updated"
+            })
         }
     });
 
@@ -150,7 +184,10 @@ let resendVarificationEamilCOntroller = async (req,res)=>{
 
          mailverification(token,email)
 
-         res.send({message: "check you email for varification"})
+         res.send({
+            success: true,
+            message: "check you email for varification"
+        })
 
 }
 
@@ -159,18 +196,27 @@ let verifyemailController = async (req,res) =>{
 
      jwt.verify(token, process.env.ACCESSE_TOKEN_SWCRET, async function(err, decoded){
         if(err){
-            res.send({message: "unathorized"})
+            res.send({
+                success: false,
+                message: "unathorized"
+            })
         }else{
             const UserId = decoded.id
 
             let findUser = await User.findById(UserId)
 
             if(findUser.isVarified){
-                return res.send({message: "User allready verified"})
+                return res.send({
+                    success: false,
+                    message: "User allready verified"
+                })
             }else{
                 findUser.isVarified = true
                 findUser.save()
-                res.send({message: "Email verified successfully Done"})
+                res.send({
+                    success: true,
+                    message: "Email verified successfully Done"
+                })
             }
         }
      })
