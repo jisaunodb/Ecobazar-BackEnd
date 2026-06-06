@@ -106,4 +106,4 @@ const ProductUpdateController = async (req,res) =>{
 }
 
 
-module.exports = {createProductController}
+module.exports = {createProductController,getProductControllers,getsingleProductController,productDeleteController,ProductUpdateController}

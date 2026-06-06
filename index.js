@@ -7,6 +7,10 @@ const dbconfig = require('./config/dbconfig')
 
 const { registratinController, loginController, forgotpasswordController, resetpasswordController, resendvarificationEamilCOntroller, resendVarificationEamilCOntroller, verifyemailController } = require('./controllers/authenticationControllers')
 const { getAlUsersController, singleuserDataController, deletUserController, UpdateUserController } = require('./controllers/userController')
+const { createProductController } = require('./controllers/productController')
+
+const axios = require('axios')
+
 // const rateLimit = require('express-rate-limit')
 
 // middleware
@@ -34,8 +38,32 @@ app.post('/resendvarification',resendVarificationEamilCOntroller)
 app.post('/verifyemail/:token', verifyemailController)
 
 // Product Create
-app.post('/createproduct')
+app.post('/createproduct',createProductController)
+
 // Order Management
+
+// payment
+
+// app.post('/payment', async function (req,res){
+
+//     let jisan = req.body
+//     console.log(jisan);
+
+//     let data = await axios.post('https://sandbox.aamarpay.com/jsonpost.php',{
+//         store_id: "aamarpaytest",
+//         signature_key: "dbb74894e82415a2f7ff0ec3a97e4183",
+//         ...req.body,
+//         tran_id: Date.now(),
+//         currency: "BDT",
+//         success_url: "https://example.com/success.php",
+//         fail_url: "https://example.com/fail.php",
+//         cancel_url: "https://example.com/cancel.php",
+//         desc: "Lend Money",
+//         type: "json"
+//     })
+//     res.send(data.data)
+//     // console.log(data.data)
+// })
 
 // User Management
 app.post('/allusers', getAlUsersController)
