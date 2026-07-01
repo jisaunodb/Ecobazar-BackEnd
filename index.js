@@ -7,13 +7,16 @@ const dbconfig = require('./config/dbconfig')
 
 const { registratinController, loginController, forgotpasswordController, resetpasswordController, resendvarificationEamilCOntroller, resendVarificationEamilCOntroller, verifyemailController } = require('./controllers/authenticationControllers')
 const { getAlUsersController, singleuserDataController, deletUserController, UpdateUserController } = require('./controllers/userController')
-const { createProductController } = require('./controllers/productController')
+const { createProductController, getProductControllers, getsingleProductController, productDeleteController, ProductUpdateController } = require('./controllers/productController')
 
 const axios = require('axios')
+const multer = require('multer')
+const { createCart, incredecre, getCart, prodelete } = require('./controllers/CartController')
+const paymentController = require('./controllers/paymentController')
+const { getorderController } = require('./controllers/OrderController')
 
 // const rateLimit = require('express-rate-limit')
 
-// middleware
 
 // const limiter = rateLimit({
 // 	windowMs: 15 * 60 * 1000, // 15 minutes
@@ -24,10 +27,27 @@ const axios = require('axios')
 // 	// store: ... , // Redis, Memcached, etc. See below.
 // })
 // app.use(limiter)
+
+
+const storage = multer.diskStorage({
+  destination: function (req, file, cb) {
+    cb(null, './uploads/Products');
+  },
+  filename: function (req, file, cb) {
+    const uniqueSuffix = Date.now() + '-' + Math.round(Math.random() * 1e9);
+    cb(null, uniqueSuffix + "-" + file.onginalname);
+  },
+});
+
+const upload = multer({ storage: storage });
+
+
+
+// Middlewere
 app.use(express.json())
 app.use(cors())
 
-// database config
+// Database config
 dbconfig()
 
 app.post('/registration',registratinController)
@@ -38,11 +58,29 @@ app.post('/resendvarification',resendVarificationEamilCOntroller)
 app.post('/verifyemail/:token', verifyemailController)
 
 // Product Create
-app.post('/createproduct',createProductController)
+app.post('/createproduct',upload.array('photos', 5),createProductController);
+app.post('/UpdateProduct/:id',upload.array('photos', 5), ProductUpdateController )
+
+app.get('/allProduct', getProductControllers )
+app.get('/SingleProduct/:id', getsingleProductController )
+app.delete('/DeleteProduct/:id', productDeleteController )
+
+// Cart Management
+app.post('/cart/create', createCart)
+app.post('/cart/update/:id', incredecre)
+app.get('/cart/:userId', getCart)
+app.delete('/cart/:id', prodelete)
+
+
+// cart check complete
 
 // Order Management
 
+app.get('/getOrder/:userid',getorderController)
+
 // payment
+
+app.post('/payment', paymentController)
 
 // app.post('/payment', async function (req,res){
 
@@ -68,7 +106,7 @@ app.post('/createproduct',createProductController)
 // User Management
 app.post('/allusers', getAlUsersController)
 app.post('/singleusers/:id', singleuserDataController)
-app.post('/delete/:id', deletUserController)
+app.delete('/delete/:id', deletUserController)
 app.post('/update/:id', UpdateUserController)
 
 

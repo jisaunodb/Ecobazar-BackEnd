@@ -4,8 +4,16 @@ const Product = require('../models/ProductModel')
 
 
 const createProductController = async (req,res) =>{
-    const {title,price,Category} = req.body
+    const {title,price,Category,discountPrice} = req.body
     empyfieldvalidation(res,title,price,Category)
+
+    // discount price check
+    if (discountPrice && discountPrice > price) {
+        return res.status(400).json({
+            success: false,
+            message: "Discount price can't be greater than price"
+        });
+    }
 
     // title exist ache naki
 
@@ -54,7 +62,7 @@ const getsingleProductController = async (req,res)=>{
 
         res.json({
             success: true,
-            product
+            product : SingleProduct
         })
 
     } catch (error) {
@@ -72,7 +80,7 @@ const productDeleteController = async (req,res) =>{
     try {
         const {id} = req.params
 
-        await Product.findByIdAndDelete({id})
+        await Product.findByIdAndDelete(id)
 
         res.json({
             success: true,
@@ -91,6 +99,38 @@ const productDeleteController = async (req,res) =>{
 const ProductUpdateController = async (req,res) =>{
     try {
         const {id} =req.params
+        const {price,discountPrice} = req.body
+
+        const existingProduct = await Product.findById(id)
+
+        if (!existingProduct) {
+            return res.status(404).json({
+                success: false,
+                message: "Product not found"
+            })
+        }
+
+        // parsentage work
+
+        if (discountPrice !== undefined && (discountPrice > 100 || discountPrice < 0)) {
+            return res.status(400).json({
+                success: false,
+                message: "Discount percentage must be between 0 and 100"
+            })
+        }
+
+
+        // const finalPrice = price !== undefined ? price : existingProduct.price
+        // const finalDiscount = discountPrice !== undefined ? discountPrice : existingProduct.discountPrice
+
+        // if (finalDiscount > finalPrice) {
+        //     return res.status(400).json({
+        //         success: false,
+        //         message: "Discount price can't be greater than price"
+        //     })
+        // }
+
+
         const productUpdate = await Product.findByIdAndUpdate({_id: id},req.body)
 
         res.json({

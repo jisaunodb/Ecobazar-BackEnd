@@ -7,9 +7,9 @@ let getAlUsersController = async (req,res)=>{
     })
 }
 
-let singleuserDataController = async (req,rea) =>{
+let singleuserDataController = async (req,res) =>{
 
-    let id = req.params
+    let {id }= req.params
 
     let Userdata = await User.findById(id)
     res.send({
@@ -20,7 +20,7 @@ let singleuserDataController = async (req,rea) =>{
 
 
 let deletUserController = async (req,res) =>{
-     let id = req.params
+     let {id} = req.params
 
      let Userdata = await User.findByIdAndDelete (id)
      res.send({

@@ -21,6 +21,7 @@ const ProductSchema = new Schema({
     discountPrice :{
         type: Number,
         min: 0,
+        max: 100,  // percentage
         default: 0
     },
     sku:{
@@ -41,7 +42,7 @@ const ProductSchema = new Schema({
     },
     Category: {
         type: String,
-        require: true
+        required: true
     },
     subCategory: {
         type: String
@@ -63,7 +64,7 @@ const ProductSchema = new Schema({
     ],
     status: {
         type : String,
-        enam: ["pending","active","inactive"],
+        enum: ["pending","active","inactive"],
         default: "pending"
     },
     images:[
@@ -78,6 +79,14 @@ const ProductSchema = new Schema({
         }
     ]
 
-},{timestamps: true})
+},{
+    timestamps: true,
+    toJSON: { virtuals: true },
+    toObject: { virtuals: true }
+})
+ProductSchema.virtual('finalPrice').get(function() {
+    // return this.price - this.discountPrice;
+    return this.price - (this.price * this.discountPrice / 100);   // percentage
+});
 
 module.exports = moongose.model('Product', ProductSchema)
