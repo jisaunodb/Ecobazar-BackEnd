@@ -12,9 +12,18 @@ let singleuserDataController = async (req,res) =>{
     let {id }= req.params
 
     let Userdata = await User.findById(id)
+
+     if (!Userdata) {
+      return res.status(404).send({
+        success: false,
+        message: 'User not found'
+      });
+    }
+
     res.send({
         success: true,
-        message: `${Userdata.email} data  `
+        message: `${Userdata.email} data  `,
+        data: Userdata
     })
 }
 
@@ -32,7 +41,7 @@ let deletUserController = async (req,res) =>{
 let UpdateUserController = async (req,res) =>{
     const {id} = req.params
 
-    let userData = await User.findByIdAndUpdate({_id: id},req.body,{new:true})
+    let userData = await User.findByIdAndUpdate( id,req.body,{new:true})
 
     res.send({
         success: true,

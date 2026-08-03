@@ -3,12 +3,12 @@ const mongoose = require('mongoose')
 const {Schema} = mongoose
 
 const UseSchema = new Schema({
-    firstName :{
+    name :{
         type: String
     },
-    lastName: {
-        type: String
-    },
+    // lastName: {
+    //     type: String
+    // },
     email:{
         type: String
     },
@@ -18,9 +18,9 @@ const UseSchema = new Schema({
     phoneNumber:{
         type: String
     },
-    terms: {
-        type: Boolean
-    },
+    // terms: {
+    //     type: Boolean
+    // },
     profile:{
         type: String
     },
@@ -37,13 +37,29 @@ const UseSchema = new Schema({
         type: Boolean,
         default: false
     },
+
+    address:{
+        street:{
+            type: String
+        },
+        city:{
+            type: String
+        },
+         country:{
+            type: String
+        },
+         zipCode:{
+            type : String
+        },
+    },
+
     billingAddress:{
-        firstName :{
+        fullName :{
             type: String
         },
-        lastName: {
-            type: String
-        },
+        // lastName: {
+        //     type: String
+        // },
         email:{
             type: String
         },
@@ -53,9 +69,9 @@ const UseSchema = new Schema({
         street:{
             type: String
         },
-        state:{
-            type: String
-        },
+        // state:{
+        //     type: String
+        // },
         zipCode:{
             type : String
         },
@@ -63,6 +79,9 @@ const UseSchema = new Schema({
         type: String
         },
         country:{
+            type: String
+        },
+        city:{
             type: String
         }
     }

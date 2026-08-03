@@ -5,7 +5,7 @@ const app = express()
 const cors = require("cors")
 const dbconfig = require('./config/dbconfig')
 
-const { registratinController, loginController, forgotpasswordController, resetpasswordController, resendvarificationEamilCOntroller, resendVarificationEamilCOntroller, verifyemailController } = require('./controllers/authenticationControllers')
+const { registratinController, loginController, forgotpasswordController, resetpasswordController, resendvarificationEamilCOntroller, resendVarificationEamilCOntroller, verifyemailController, changePasswordController } = require('./controllers/authenticationControllers')
 const { getAlUsersController, singleuserDataController, deletUserController, UpdateUserController } = require('./controllers/userController')
 const { createProductController, getProductControllers, getsingleProductController, productDeleteController, ProductUpdateController } = require('./controllers/productController')
 
@@ -57,6 +57,7 @@ app.post('/resetpassword/:token',resetpasswordController)
 app.post('/resendvarification',resendVarificationEamilCOntroller)
 app.post('/verifyemail/:token', verifyemailController)
 
+app.post('/changepassword/:token', changePasswordController)
 // Product Create
 app.post('/createproduct',upload.array('photos', 5),createProductController);
 app.post('/UpdateProduct/:id',upload.array('photos', 5), ProductUpdateController )

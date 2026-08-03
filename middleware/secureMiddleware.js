@@ -7,7 +7,7 @@ let token = req.headers.authorization
 
    jwt.verify(token, process.env.ACCESSE_TOKEN_SWCRET, function(err, decoded) {
 
-    if(error){
+    if(err){
         res.send({
             success: false,
             massage: "unauthorized "

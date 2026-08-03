@@ -7,7 +7,7 @@ const tokenGenerator = require("../utils/tokenGenerator")
 const existingData = require("../utils/existingData")
 const bcrypt = require('bcrypt');
 let registratinController = async (req,res)=>{
-    const{email,password,confirmPassword,terms} = req.body
+    const{email,password,confirmPassword,name,phoneNumber,role} = req.body
 
 
    let users = await existingData(res,{email: email})
@@ -19,12 +19,12 @@ let registratinController = async (req,res)=>{
     })
    }
 
-    if(!terms){
-       return res.send({
-        success: false,
-        message: "please accecpt our terms and condition"
-    })
-    }
+    // if(!terms){
+    //    return res.send({
+    //     success: false,
+    //     message: "please accecpt our terms and condition"
+    // })
+    // }
 
 
 
@@ -44,7 +44,9 @@ let registratinController = async (req,res)=>{
     let newUser = new User ({
         email: email,
         password: hash,
-        terms: terms
+        phoneNumber:phoneNumber,
+        name: name,
+        role: role || 'user'
     })
    await newUser.save()
 
@@ -97,12 +99,28 @@ let loginController = async (req,res) =>{
         return res.send({
             success: false,
             message:"Invalid Credential"
+
         })
    }
 
+   let token = tokenGenerator({
+    id: users._id,
+    email: users.email
+},process.env.ACCESSE_TOKEN_SWCRET,"1d")
+
+   delete users[-password]
    res.send({
     success: true,
-    message: "login successfull"
+    message: "login successfull",
+    token: token,
+    data: {
+        _id: users._id,
+        name: users.name,
+        email: users.email,
+        isVarified: users.isVarified,
+        role: users.role,
+        ishold: users.ishold,
+    }
 })
 }
 
@@ -157,12 +175,18 @@ let resetpasswordController = async(req,res)=>{
         if(err){
             res.send({
                 success: false,
-                massage: "unauthorized"
+                message: "unauthorized"
             })
         }else{
               const hash = bcrypt.hashSync(newPassword, 10);
-              const updatedata = await User.findByIdAndUpdate({_id: decoded.id},{password: hash},{new : true})
+              const updatedata = await User.findByIdAndUpdate(decoded.id,{password: hash},{new : true})
 
+              if(!updatedata){
+                        return res.send({
+                            success: false,
+                            message: "User not found"
+                        })
+                    }
               res.send({
                 success: true,
                 message: "Password Updated"
@@ -212,7 +236,7 @@ let verifyemailController = async (req,res) =>{
                 })
             }else{
                 findUser.isVarified = true
-                findUser.save()
+               await findUser.save()
                 res.send({
                     success: true,
                     message: "Email verified successfully Done"
@@ -222,4 +246,63 @@ let verifyemailController = async (req,res) =>{
      })
 }
 
-module.exports = {registratinController,loginController,forgotpasswordController,resetpasswordController,resendVarificationEamilCOntroller,verifyemailController}
+
+let changePasswordController = async (req, res) => {
+
+    let { currentPassword, newPassword, confirmPassword } = req.body
+    let { token } = req.params
+
+    if (newPassword !== confirmPassword) {
+        return res.send({
+            success: false,
+            message: "confirm password not matched"
+        })
+    }
+
+    jwt.verify(token, process.env.ACCESSE_TOKEN_SWCRET, async function (err, decoded) {
+
+        if (err) {
+            return res.send({
+                success: false,
+                message: "unauthorized"
+            })
+        }
+
+        let user = await User.findById(decoded.id)
+
+        if (!user) {
+            return res.send({
+                success: false,
+                message: "User not found"
+            })
+        }
+
+        let isMatch = bcrypt.compareSync(currentPassword, user.password)
+
+        if (!isMatch) {
+            return res.send({
+                success: false,
+                message: "Current password is incorrect"
+            })
+        }
+
+        const hash = bcrypt.hashSync(newPassword, 10);
+        const updatedata = await User.findByIdAndUpdate(decoded.id, { password: hash }, { new: true })
+
+        if (!updatedata) {
+            return res.send({
+                success: false,
+                message: "User not found"
+            })
+        }
+
+        res.send({
+            success: true,
+            message: "Password Updated"
+        })
+    });
+
+}
+
+
+module.exports = {registratinController,loginController,forgotpasswordController,resetpasswordController,resendVarificationEamilCOntroller,verifyemailController,changePasswordController}
