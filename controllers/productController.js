@@ -4,27 +4,53 @@ const Product = require('../models/ProductModel')
 
 
 const createProductController = async (req,res) =>{
-    const {title,price,Category,discountPrice} = req.body
+    const {title,price,Category,discountPrice,tag,stock,subCategory,brand,status,description,AdditionalInfo,isMain} = req.body
     empyfieldvalidation(res,title,price,Category)
 
+    const numericPrice = Number(price);
+    const numericDiscount = Number(discountPrice);
+
+    // console.log(req.files);
+
+
+    let images = []
+    req.files.map((item,index)=>{
+        images.push({
+            url: item.path,
+            isMain: isMain == index
+        });
+
+    })
+
+
+
+
+
+
     // discount price check
-    if (discountPrice && discountPrice > price) {
+
+    if (numericDiscount && numericDiscount > numericPrice) {
         return res.status(400).json({
             success: false,
             message: "Discount price can't be greater than price"
         });
     }
+    console.log(req.files)
 
-    // title exist ache naki
+    // // title exist ache naki
 
     let sku = `${Date.now()}-${new Date().getFullYear()}`
 
 
-    // sku exist korteche kina
+    // // sku exist korteche kina
 
     let product = new Product({
         ...req.body,
-        sku: sku
+        price: numericPrice,
+        discountPrice: numericDiscount,
+        sku: sku,
+        images: images
+
     })
     await product.save()
 
@@ -110,7 +136,7 @@ const ProductUpdateController = async (req,res) =>{
             })
         }
 
-        // parsentage work
+        // discountPrice parsentage work
 
         if (discountPrice !== undefined && (discountPrice > 100 || discountPrice < 0)) {
             return res.status(400).json({

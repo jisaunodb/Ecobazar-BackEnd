@@ -6,7 +6,7 @@ const ProductSchema = new Schema({
     title : {
         type: String,
         unique : true,
-        required: true
+        // required: true
     },
     description:{
         type: String
@@ -16,7 +16,7 @@ const ProductSchema = new Schema({
     },
     price :{
         type: Number,
-        required: true
+        // required: true
     },
     discountPrice :{
         type: Number,
@@ -26,7 +26,7 @@ const ProductSchema = new Schema({
     },
     sku:{
         type: String,
-        required: true,
+        // required: true,
         unique: true
     },
     stock:{
@@ -42,7 +42,7 @@ const ProductSchema = new Schema({
     },
     Category: {
         type: String,
-        required: true
+        // required: true
     },
     subCategory: {
         type: String
@@ -71,11 +71,12 @@ const ProductSchema = new Schema({
         {
             url: {
                 type: String,
-                isMain: {
+
+            },
+            isMain: {
                     type: Boolean,
                     default: false
                 }
-            }
         }
     ]
 

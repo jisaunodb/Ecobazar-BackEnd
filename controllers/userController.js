@@ -3,7 +3,8 @@ let getAlUsersController = async (req,res)=>{
     let Userdata = await User.find({})
     res.send({
         success: true,
-        message: "All User Data"
+        message: "All User Data",
+        Userdata
     })
 }
 

@@ -31,11 +31,11 @@ const { getorderController } = require('./controllers/OrderController')
 
 const storage = multer.diskStorage({
   destination: function (req, file, cb) {
-    cb(null, './uploads/Products');
+    cb(null, './uploads');
   },
   filename: function (req, file, cb) {
     const uniqueSuffix = Date.now() + '-' + Math.round(Math.random() * 1e9);
-    cb(null, uniqueSuffix + "-" + file.onginalname);
+    cb(null, uniqueSuffix + "-" + file.originalname);
   },
 });
 
@@ -105,7 +105,7 @@ app.post('/payment', paymentController)
 // })
 
 // User Management
-app.post('/allusers', getAlUsersController)
+app.get('/allusers', getAlUsersController)
 app.post('/singleusers/:id', singleuserDataController)
 app.delete('/delete/:id', deletUserController)
 app.post('/update/:id', UpdateUserController)
