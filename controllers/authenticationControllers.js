@@ -80,48 +80,57 @@ let registratinController = async (req,res)=>{
 }
 
 let loginController = async (req,res) =>{
-    const{email,password} = req.body
+    try {
+        const{email,password} = req.body
 
 
-   let users = await User.findOne({email:email})
+        let users = await User.findOne({email:email})
 
-   if (!users){
-    return res.send({
-        success: false,
-        message: "User Not Found"
-    })
-   }
+        if (!users){
+            return res.send({
+                success: false,
+                message: "User Not Found"
+            })
+        }
 
-   empyfieldvalidation(res,email,password)
+        empyfieldvalidation(res,email,password)
 
-    let passwords =  bcrypt.compareSync(password, users.password)
-   if(!passwords){
-        return res.send({
-            success: false,
-            message:"Invalid Credential"
+        let passwords =  bcrypt.compareSync(password, users.password)
+        if(!passwords){
+            return res.send({
+                success: false,
+                message:"Invalid Credential"
 
+             })
+        }
+
+        let token = tokenGenerator({
+            id: users._id,
+            email: users.email
+        },process.env.ACCESSE_TOKEN_SWCRET,"1d")
+
+    //    delete users[-password]
+        res.send({
+        success: true,
+        message: "login successfull",
+        token: token,
+        data: {
+            _id: users._id,
+            name: users.name,
+            email: users.email,
+            isVarified: users.isVarified,
+            role: users.role,
+            ishold: users.ishold,
+            }
         })
-   }
-
-   let token = tokenGenerator({
-    id: users._id,
-    email: users.email
-},process.env.ACCESSE_TOKEN_SWCRET,"1d")
-
-   delete users[-password]
-   res.send({
-    success: true,
-    message: "login successfull",
-    token: token,
-    data: {
-        _id: users._id,
-        name: users.name,
-        email: users.email,
-        isVarified: users.isVarified,
-        role: users.role,
-        ishold: users.ishold,
+    } catch (error) {
+        console.error(error);
+            return res.status(500).send({
+            success: false,
+            message: error.message
+        })
     }
-})
+
 }
 
 let forgotpasswordController = async (req,res) =>{
