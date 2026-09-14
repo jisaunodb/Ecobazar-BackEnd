@@ -4,7 +4,7 @@ const express = require("express")
 const app = express()
 const cors = require("cors")
 const dbconfig = require('./config/dbconfig')
-
+const path = require("path")
 const { registratinController, loginController, forgotpasswordController, resetpasswordController, resendvarificationEamilCOntroller, resendVarificationEamilCOntroller, verifyemailController, changePasswordController } = require('./controllers/authenticationControllers')
 const { getAlUsersController, singleuserDataController, deletUserController, UpdateUserController } = require('./controllers/userController')
 const { createProductController, getProductControllers, getsingleProductController, productDeleteController, ProductUpdateController } = require('./controllers/productController')
@@ -60,7 +60,10 @@ app.post('/verifyemail/:token', verifyemailController)
 app.post('/changepassword/:token', changePasswordController)
 // Product Create
 app.post('/createproduct',upload.array('photos', 5),createProductController);
+
 app.post('/UpdateProduct/:id',upload.array('photos', 5), ProductUpdateController )
+
+app.use('/uploads', express.static(path.join(__dirname, 'uploads')));
 
 app.get('/allProduct', getProductControllers )
 app.get('/SingleProduct/:id', getsingleProductController )

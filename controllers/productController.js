@@ -3,62 +3,63 @@ const {empyfieldvalidation} = require('../utils/validation')
 const Product = require('../models/ProductModel')
 
 
-const createProductController = async (req,res) =>{
-    const {title,price,Category,discountPrice,tag,stock,subCategory,brand,status,description,AdditionalInfo,isMain} = req.body
-    empyfieldvalidation(res,title,price,Category)
+const createProductController = async (req, res) => {
+    try {
+        const { title, price, Category, discountPrice, isMain } = req.body;
 
-    const numericPrice = Number(price);
-    const numericDiscount = Number(discountPrice);
+        const isInvalid = empyfieldvalidation(res, title, price, Category);
+        if (isInvalid) return;
 
-    // console.log(req.files);
+        const numericPrice = Number(price);
+        const numericDiscount = Number(discountPrice);
 
+        if (numericDiscount && numericDiscount > numericPrice) {
+            return res.status(400).json({
+                success: false,
+                message: "Discount price can't be greater than price"
+            });
+        }
 
-    let images = []
-    req.files.map((item,index)=>{
-        images.push({
-            url: item.path,
-            isMain: isMain == index
+        const validFields = ["Featured Organic Products", "Just Arrived This Week"];
+            if (req.body.field && !validFields.includes(req.body.field)) {
+            return res.status(400).json({
+                success: false,
+                message: "Invalid field value"
+            });
+        }
+
+        let images = [];
+        (req.files || []).forEach((item, index) => {
+            images.push({
+                url: `http://localhost:5000/uploads/${item.filename}`,
+                isMain: isMain == index
+            });
         });
 
-    })
+        let sku = `${Date.now()}-${new Date().getFullYear()}`;
 
+        let product = new Product({
+            ...req.body,
+            price: numericPrice,
+            discountPrice: numericDiscount,
+            sku: sku,
+            images: images
+        });
 
+        await product.save();
 
-
-
-
-    // discount price check
-
-    if (numericDiscount && numericDiscount > numericPrice) {
-        return res.status(400).json({
+        return res.status(201).json({
+            success: true,
+            message: "Product Created"
+        });
+    } catch (error) {
+        console.error(error);
+        return res.status(500).json({
             success: false,
-            message: "Discount price can't be greater than price"
+            message: error.message
         });
     }
-    console.log(req.files)
-
-    // // title exist ache naki
-
-    let sku = `${Date.now()}-${new Date().getFullYear()}`
-
-
-    // // sku exist korteche kina
-
-    let product = new Product({
-        ...req.body,
-        price: numericPrice,
-        discountPrice: numericDiscount,
-        sku: sku,
-        images: images
-
-    })
-    await product.save()
-
-    res.json({
-        success: true,
-        message: "Product Created"
-    })
-}
+};
 
 // all product get
 
@@ -122,54 +123,75 @@ const productDeleteController = async (req,res) =>{
 
 // product update
 
-const ProductUpdateController = async (req,res) =>{
+const ProductUpdateController = async (req, res) => {
     try {
-        const {id} =req.params
-        const {price,discountPrice} = req.body
+        const { id } = req.params;
+        const { price, discountPrice, mainKey } = req.body;
 
-        const existingProduct = await Product.findById(id)
+        const existingProduct = await Product.findById(id);
 
         if (!existingProduct) {
             return res.status(404).json({
                 success: false,
                 message: "Product not found"
-            })
+            });
         }
 
-        // discountPrice parsentage work
-
+        // discountPrice percentage check
         if (discountPrice !== undefined && (discountPrice > 100 || discountPrice < 0)) {
             return res.status(400).json({
                 success: false,
                 message: "Discount percentage must be between 0 and 100"
-            })
+            });
         }
 
+        let updateData = { ...req.body };
 
-        // const finalPrice = price !== undefined ? price : existingProduct.price
-        // const finalDiscount = discountPrice !== undefined ? discountPrice : existingProduct.discountPrice
+        // ✅ existingImages (frontend theke JSON string hishebe ashe) parse kori
+        let existingImages = [];
+        if (req.body.existingImages) {
+            try {
+                existingImages = JSON.parse(req.body.existingImages);
+            } catch (e) {
+                existingImages = existingProduct.images || [];
+            }
+        } else {
+            existingImages = existingProduct.images || [];
+        }
 
-        // if (finalDiscount > finalPrice) {
-        //     return res.status(400).json({
-        //         success: false,
-        //         message: "Discount price can't be greater than price"
-        //     })
-        // }
+        let newImages = [];
+        if (req.files && req.files.length > 0) {
+            newImages = req.files.map((item, index) => ({
+                url: `http://localhost:5000/uploads/${item.filename}`,
+                isMain: mainKey === `new-${index}`
+            }));
+        }
 
+        //  existing image gulor moddhe main ta thik kore boshai
+        const finalExistingImages = existingImages.map((img, index) => ({
+            ...img,
+            isMain: mainKey === `existing-${index}`
+        }));
 
-        const productUpdate = await Product.findByIdAndUpdate({_id: id},req.body)
+        updateData.images = [...finalExistingImages, ...newImages];
 
-        res.json({
+        delete updateData.existingImages;
+        delete updateData.mainKey;
+
+        await Product.findByIdAndUpdate(id, updateData);
+
+        return res.json({
             success: true,
-            message: "Product Update"
-        })
+            message: "Product Updated"
+        });
     } catch (error) {
-        res.json({
-        success: false,
-        message: "Surver Error"
-    })
+        console.error(error);
+        return res.status(500).json({
+            success: false,
+            message: "Server Error"
+        });
     }
-}
+};
 
 
 module.exports = {createProductController,getProductControllers,getsingleProductController,productDeleteController,ProductUpdateController}

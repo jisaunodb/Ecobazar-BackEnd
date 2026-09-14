@@ -42,7 +42,7 @@ const ProductSchema = new Schema({
     },
     Category: {
         type: String,
-        // required: true
+        // required: true+
     },
     subCategory: {
         type: String
@@ -57,6 +57,7 @@ const ProductSchema = new Schema({
     //     ref: 'SubCategory'
     // },
 
+
     tag: [
         {
             type: String,
@@ -66,6 +67,10 @@ const ProductSchema = new Schema({
         type : String,
         enum: ["pending","active","inactive"],
         default: "pending"
+    },
+    field: {
+        type : String,
+        enum: ["Featured Organic Products","Just Arrived This Week"],
     },
     images:[
         {
