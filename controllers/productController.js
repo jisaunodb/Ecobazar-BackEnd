@@ -31,7 +31,7 @@ const createProductController = async (req, res) => {
         let images = [];
         (req.files || []).forEach((item, index) => {
             images.push({
-                url: `http://localhost:5000/uploads/${item.filename}`,
+                url: `https://ecobazar-backend-1qs6.onrender.com/uploads/${item.filename}`,
                 isMain: isMain == index
             });
         });
@@ -162,7 +162,7 @@ const ProductUpdateController = async (req, res) => {
         let newImages = [];
         if (req.files && req.files.length > 0) {
             newImages = req.files.map((item, index) => ({
-                url: `http://localhost:5000/uploads/${item.filename}`,
+                url: `https://ecobazar-backend-1qs6.onrender.com/uploads/${item.filename}`,
                 isMain: mainKey === `new-${index}`
             }));
         }
