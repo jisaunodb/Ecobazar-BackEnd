@@ -1,5 +1,5 @@
-require('node:dns').setServers(['1.1.1.1','8.8.8.8'])
 require('dotenv').config()
+require('node:dns').setServers(['1.1.1.1','8.8.8.8'])
 const express = require("express")
 const app = express()
 const cors = require("cors")
@@ -7,7 +7,7 @@ const dbconfig = require('./config/dbconfig')
 const path = require("path")
 const { registratinController, loginController, forgotpasswordController, resetpasswordController, resendvarificationEamilCOntroller, resendVarificationEamilCOntroller, verifyemailController, changePasswordController } = require('./controllers/authenticationControllers')
 const { getAlUsersController, singleuserDataController, deletUserController, UpdateUserController } = require('./controllers/userController')
-const { createProductController, getProductControllers, getsingleProductController, productDeleteController, ProductUpdateController } = require('./controllers/productController')
+const { createProductController, getProductControllers, getsingleProductController, productDeleteController, ProductUpdateController, bulkCreateProductController } = require('./controllers/productController')
 
 const axios = require('axios')
 const multer = require('multer')
@@ -28,6 +28,7 @@ const { getorderController } = require('./controllers/OrderController')
 // })
 // app.use(limiter)
 
+// console.log(process.env.ACCESSE_TOKEN_SWCRET);
 
 const storage = multer.diskStorage({
   destination: function (req, file, cb) {
@@ -60,6 +61,10 @@ app.post('/verifyemail/:token', verifyemailController)
 app.post('/changepassword/:token', changePasswordController)
 // Product Create
 app.post('/createproduct',upload.array('photos', 5),createProductController);
+app.post(
+  '/bulk/createproduct',upload.single("excell-file"),
+  bulkCreateProductController
+);
 
 app.post('/UpdateProduct/:id',upload.array('photos', 5), ProductUpdateController )
 

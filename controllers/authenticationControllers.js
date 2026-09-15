@@ -109,6 +109,9 @@ let loginController = async (req,res) =>{
             email: users.email
         },process.env.ACCESSE_TOKEN_SWCRET,"1d")
 
+        console.log(token);
+
+
     //    delete users[-password]
         res.send({
         success: true,

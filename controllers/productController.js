@@ -193,5 +193,9 @@ const ProductUpdateController = async (req, res) => {
     }
 };
 
+const bulkCreateProductController = async (req,res) =>{
+    console.log(req.file);
 
-module.exports = {createProductController,getProductControllers,getsingleProductController,productDeleteController,ProductUpdateController}
+}
+
+module.exports = {createProductController,getProductControllers,getsingleProductController,productDeleteController,ProductUpdateController,bulkCreateProductController}
