@@ -1,6 +1,10 @@
 
 const {empyfieldvalidation} = require('../utils/validation')
 const Product = require('../models/ProductModel')
+// const { readExcelFile } = require('read-excel-file/node')
+
+const { readSheet   } = require('read-excel-file/node')
+
 
 
 const createProductController = async (req, res) => {
@@ -31,7 +35,8 @@ const createProductController = async (req, res) => {
         let images = [];
         (req.files || []).forEach((item, index) => {
             images.push({
-                url: `https://ecobazar-backend-1qs6.onrender.com/uploads/${item.filename}`,
+                // url: `https://ecobazar-backend-1qs6.onrender.com/uploads/${item.path}`,
+                url: item.path,
                 isMain: isMain == index
             });
         });
@@ -162,7 +167,8 @@ const ProductUpdateController = async (req, res) => {
         let newImages = [];
         if (req.files && req.files.length > 0) {
             newImages = req.files.map((item, index) => ({
-                url: `https://ecobazar-backend-1qs6.onrender.com/uploads/${item.filename}`,
+                // url: `https://ecobazar-backend-1qs6.onrender.com/uploads/${item.path}`,
+                url: item.path,
                 isMain: mainKey === `new-${index}`
             }));
         }
@@ -194,7 +200,11 @@ const ProductUpdateController = async (req, res) => {
 };
 
 const bulkCreateProductController = async (req,res) =>{
-    console.log(req.file);
+    // console.log(req.file);
+    const data = await readSheet(`./${req.file.path}`)
+
+    // readExcelFile("../uploads/1789424995841-637417465-dummy-data.xlsx", { trim: false })
+    console.log(data);
 
 }
 

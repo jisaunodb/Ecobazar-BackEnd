@@ -3,7 +3,7 @@ require('node:dns').setServers(['1.1.1.1','8.8.8.8'])
 const express = require("express")
 const app = express()
 const cors = require("cors")
-const dbconfig = require('./config/dbconfig')
+const { dbconfig, cloudinary } = require('./config/dbconfig')
 const path = require("path")
 const { registratinController, loginController, forgotpasswordController, resetpasswordController, resendvarificationEamilCOntroller, resendVarificationEamilCOntroller, verifyemailController, changePasswordController } = require('./controllers/authenticationControllers')
 const { getAlUsersController, singleuserDataController, deletUserController, UpdateUserController } = require('./controllers/userController')
@@ -14,6 +14,7 @@ const multer = require('multer')
 const { createCart, incredecre, getCart, prodelete } = require('./controllers/CartController')
 const paymentController = require('./controllers/paymentController')
 const { getorderController } = require('./controllers/OrderController')
+const { CloudinaryStorage } = require('multer-storage-cloudinary')
 
 // const rateLimit = require('express-rate-limit')
 
@@ -30,17 +31,30 @@ const { getorderController } = require('./controllers/OrderController')
 
 // console.log(process.env.ACCESSE_TOKEN_SWCRET);
 
-const storage = multer.diskStorage({
-  destination: function (req, file, cb) {
-    cb(null, './uploads');
-  },
-  filename: function (req, file, cb) {
-    const uniqueSuffix = Date.now() + '-' + Math.round(Math.random() * 1e9);
-    cb(null, uniqueSuffix + "-" + file.originalname);
+// const storage = multer.diskStorage({
+//   destination: function (req, file, cb) {
+//     cb(null, './uploads');
+//   },
+//   filename: function (req, file, cb) {
+//     const uniqueSuffix = Date.now() + '-' + Math.round(Math.random() * 1e9);
+//     cb(null, uniqueSuffix + "-" + file.originalname);
+//   },
+// });
+
+
+const storage = new CloudinaryStorage({
+  cloudinary: cloudinary,
+  params: {
+    folder: 'ecobazar-products', // Cloudinary te ei naam er folder e shob image jabe
+    allowed_formats: ['jpg', 'jpeg', 'png', 'webp'],
   },
 });
 
+const excelStorage = multer.memoryStorage();
+
 const upload = multer({ storage: storage });
+const uploadExcel = multer({ storage: excelStorage });
+
 
 
 
@@ -62,7 +76,7 @@ app.post('/changepassword/:token', changePasswordController)
 // Product Create
 app.post('/createproduct',upload.array('photos', 5),createProductController);
 app.post(
-  '/bulk/createproduct',upload.single("excell-file"),
+  '/bulk/createproduct',uploadExcel.single("excell-file"),
   bulkCreateProductController
 );
 
