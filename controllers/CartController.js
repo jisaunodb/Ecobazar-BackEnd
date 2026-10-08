@@ -1,113 +1,117 @@
 const Cart = require('../models/cartModel')
-const Product = require ('../models/ProductModel')
+const Product = require('../models/ProductModel')
 
-const createCart = async (req,res) =>{
-    const {proid,userid} = req.body
-
-    const existingProduct = await Product.findOne({_id: proid})
-    if(!existingProduct) {
-       return res.json({
-            success: false,
-            message: "Product not found"
-        })
-    }
-
-    // const finalPrice = existingProduct.price - (existingProduct.discountPrice || 0)
-
-    const finalPrice = existingProduct.price - (existingProduct.price * existingProduct.discountPrice / 100)  // percentage
-
-    const existingProductonCart = await Cart.findOne({product: proid,user: userid})
-    // console.log(existingProductonCart);
-
-    if(existingProductonCart){
-        existingProductonCart.quantity += 1
-        // existingProductonCart.totalPrice = existingProductonCart.totalPrice + existingProduct.price
-        existingProductonCart.totalPrice = existingProductonCart.totalPrice + finalPrice   //persentage
-        existingProductonCart.save()
-    }else{
-
-        let cart = new Cart({
-            product: proid,
-            quantity: 1,
-            totalPrice:finalPrice,
-            user: userid
-        })
-
-        cart.save()
-    }
-
-
-    res.json({
-        success: true,
-        message: 'Product added successfull'
-    })
+// discountPrice = percentage
+const getFinalPrice = (product) => {
+    const price = Number(product.price) || 0
+    const discount = Number(product.discountPrice) || 0
+    return price - (price * discount) / 100
 }
 
-const incredecre = async (req,res) =>{
-    const {id} = req.params
-    const {type} = req.body
+const createCart = async (req,res) =>{
+    try {
+        const { proid, userid } = req.body
 
-    const cart = await Cart.findOne({product: id})
-    const product = await Product.findOne({_id: id})
-    console.log(cart);
+        if (!proid || !userid) {
+            return res.status(400).json({ success: false, message: "proid and userid are required" })
+        }
 
-    if(!cart || !product){
-            return res.status(404).json({
-                success: false,
-                message: "Cart or Product not found"
+        const product = await Product.findById(proid)
+        if (!product) {
+            return res.status(404).json({ success: false, message: "Product not found" })
+        }
+
+        const finalPrice = getFinalPrice(product)
+
+        const existing = await Cart.findOne({ product: proid, user: userid })
+
+        if (existing) {
+            existing.quantity += 1
+            existing.totalPrice = finalPrice * existing.quantity
+            await existing.save()
+        } else {
+            await Cart.create({
+                product: proid,
+                quantity: 1,
+                totalPrice: finalPrice,
+                user: userid
             })
         }
 
-        // const finalPrice = product.price - (product.discountPrice || 0)
-
-        const finalPrice = product.price - (product.price * product.discountPrice / 100)  // percentage
-
-    if(type == 'plus'){
-        cart.quantity = cart.quantity + 1
-        cart.totalPrice = cart.totalPrice + finalPrice
-        await cart.save()
-    }else{
-        cart.quantity = cart.quantity - 1
-        cart.totalPrice = cart.totalPrice - finalPrice
-        cart.save()
+        res.json({ success: true, message: 'Product added successfully' })
+    } catch (error) {
+        console.error("createCart error:", error)
+        res.status(500).json({ success: false, message: error.message })
     }
-    // Product.save()
+}
 
-    res.json({
-        success: true,
-        message: 'Cart Updated Successfull'
-    })
+const incredecre = async (req,res) =>{
+    try {
+        const { id } = req.params
+        const { type, userid } = req.body
+
+        if (!userid) {
+            return res.status(400).json({ success: false, message: "userid is required" })
+        }
+
+        const cart = await Cart.findOne({ product: id, user: userid })
+        const product = await Product.findById(id)
+
+        if (!cart || !product) {
+            return res.status(404).json({ success: false, message: "Cart or Product not found" })
+        }
+
+        if (type === 'plus') {
+            cart.quantity += 1
+        } else {
+            if (cart.quantity <= 1) {
+                return res.status(400).json({
+                    success: false,
+                    message: "Minimum quantity is 1. Use delete to remove the item."
+                })
+            }
+            cart.quantity -= 1
+        }
+
+        cart.totalPrice = getFinalPrice(product) * cart.quantity
+        await cart.save()
+
+        res.json({ success: true, message: 'Cart updated successfully' })
+    } catch (error) {
+        console.error("incredecre error:", error)
+        res.status(500).json({ success: false, message: error.message })
+    }
 }
 
 const prodelete = async (req,res) =>{
-    const {id} = req.params
-
-    await Cart.findByIdAndDelete({_id: id})
-
-    res.json({
-        success: true,
-        message: 'Product Deleted'
-    })
+    try {
+        const { id } = req.params
+        await Cart.findByIdAndDelete(id)
+        res.json({ success: true, message: 'Product Deleted' })
+    } catch (error) {
+        console.error("prodelete error:", error)
+        res.status(500).json({ success: false, message: error.message })
+    }
 
 }
 
 const getCart = async (req,res) =>{
-    const {userId} = req.params
+     try {
+        const { userId } = req.params
 
-    const cart = await Cart.find({user: userId}).populate('user product')
+        // 'user' populate kora jabe na, password hash leak hoy
+        const all = await Cart.find({ user: userId }).populate('product')
 
-    let totalprice = 0
+        // delete hoye jawa product bad
+        const cart = all.filter((item) => item.product)
 
-    cart.map(item =>{
-        // console.log(item.product.price);
+        const totalprice = cart.reduce((acc, item) => acc + item.totalPrice, 0)
 
-       totalprice += item.totalPrice
-    })
-
-    res.json({
-        cart,
-        totalprice
-    })
+        res.json({ success: true, cart, totalprice })
+    } catch (error) {
+        console.error("getCart error:", error)
+        res.status(500).json({ success: false, message: error.message })
+    }
 }
 
 module.exports ={createCart,incredecre,prodelete,getCart}

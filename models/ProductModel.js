@@ -6,17 +6,17 @@ const ProductSchema = new Schema({
     title : {
         type: String,
         unique : true,
-        // required: true
+        required: true
     },
     description:{
         type: String
     },
     AdditionalInfo:{
-        type: String
+        // type: String
     },
     price :{
         type: Number,
-        // required: true
+        required: true
     },
     discountPrice :{
         type: Number,
@@ -26,7 +26,7 @@ const ProductSchema = new Schema({
     },
     sku:{
         type: String,
-        // required: true,
+        required: true,
         unique: true
     },
     stock:{
@@ -95,4 +95,5 @@ ProductSchema.virtual('finalPrice').get(function() {
     return this.price - (this.price * this.discountPrice / 100);   // percentage
 });
 
-module.exports = moongose.model('Product', ProductSchema)
+// module.exports = moongose.model('Product', ProductSchema)
+module.exports = moongose.models.Product || moongose.model('Product', ProductSchema)

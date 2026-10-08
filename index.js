@@ -7,13 +7,13 @@ const { dbconfig, cloudinary } = require('./config/dbconfig')
 const path = require("path")
 const { registratinController, loginController, forgotpasswordController, resetpasswordController, resendvarificationEamilCOntroller, resendVarificationEamilCOntroller, verifyemailController, changePasswordController } = require('./controllers/authenticationControllers')
 const { getAlUsersController, singleuserDataController, deletUserController, UpdateUserController } = require('./controllers/userController')
-const { createProductController, getProductControllers, getsingleProductController, productDeleteController, ProductUpdateController, bulkCreateProductController } = require('./controllers/productController')
+const { createProductController, getProductControllers, getsingleProductController, productDeleteController, ProductUpdateController, bulkCreateProductController, bulkexportController } = require('./controllers/productController')
 
 const axios = require('axios')
 const multer = require('multer')
 const { createCart, incredecre, getCart, prodelete } = require('./controllers/CartController')
 const paymentController = require('./controllers/paymentController')
-const { getorderController } = require('./controllers/OrderController')
+const { getorderController, getOrderByTranId, getAllOrders, updateOrderStatus, migrateOrderHistory } = require('./controllers/OrderController')
 const { CloudinaryStorage } = require('multer-storage-cloudinary')
 
 // const rateLimit = require('express-rate-limit')
@@ -31,16 +31,16 @@ const { CloudinaryStorage } = require('multer-storage-cloudinary')
 
 // console.log(process.env.ACCESSE_TOKEN_SWCRET);
 
-// const storage = multer.diskStorage({
-//   destination: function (req, file, cb) {
-//     cb(null, './uploads');
-//   },
-//   filename: function (req, file, cb) {
-//     const uniqueSuffix = Date.now() + '-' + Math.round(Math.random() * 1e9);
-//     cb(null, uniqueSuffix + "-" + file.originalname);
-//   },
-// });
-
+const storages = multer.diskStorage({
+  destination: function (req, file, cb) {
+    cb(null, './uploads');
+  },
+  filename: function (req, file, cb) {
+    const uniqueSuffix = Date.now() + '-' + Math.round(Math.random() * 1e9);
+    cb(null, uniqueSuffix + "-" + file.originalname);
+  },
+});
+const uploads = multer({ storage: storages });
 
 const storage = new CloudinaryStorage({
   cloudinary: cloudinary,
@@ -50,16 +50,17 @@ const storage = new CloudinaryStorage({
   },
 });
 
-const excelStorage = multer.memoryStorage();
+// const excelStorage = multer.memoryStorage();
 
 const upload = multer({ storage: storage });
-const uploadExcel = multer({ storage: excelStorage });
+// const uploadExcel = multer({ storage: excelStorage });
 
 
 
 
 // Middlewere
 app.use(express.json())
+app.use(express.urlencoded({ extended: true }))
 app.use(cors())
 
 // Database config
@@ -76,8 +77,11 @@ app.post('/changepassword/:token', changePasswordController)
 // Product Create
 app.post('/createproduct',upload.array('photos', 5),createProductController);
 app.post(
-  '/bulk/createproduct',uploadExcel.single("excell-file"),
+  '/bulk/createproduct',uploads.single("excell-file"),
   bulkCreateProductController
+);
+app.get(
+  '/bulk/exportproduct',bulkexportController
 );
 
 app.post('/UpdateProduct/:id',upload.array('photos', 5), ProductUpdateController )
@@ -100,10 +104,17 @@ app.delete('/cart/:id', prodelete)
 // Order Management
 
 app.get('/getOrder/:userid',getorderController)
-
+app.get('/order/track/:tran_id', getOrderByTranId)
+app.get('/admin/orders', getAllOrders)
+app.patch('/admin/order/:id/status', updateOrderStatus)
+app.get('/migrate/order-history', migrateOrderHistory)
 // payment
 
 app.post('/payment', paymentController)
+app.all('/payment/success', paymentController.success)
+app.all('/payment/fail', paymentController.fail)
+app.all('/payment/cancel', paymentController.cancel)
+app.get('/payment/order/:tran_id', paymentController.getOrder)
 
 // app.post('/payment', async function (req,res){
 

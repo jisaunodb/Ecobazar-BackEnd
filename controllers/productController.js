@@ -1,11 +1,93 @@
 
 const {empyfieldvalidation} = require('../utils/validation')
+
 const Product = require('../models/ProductModel')
 // const { readExcelFile } = require('read-excel-file/node')
-
+const { cloudinary } = require('../config/dbconfig')
 const { readSheet   } = require('read-excel-file/node')
+const writeXlsxFile = require("write-excel-file/node");
 
+const schema = {
+  title: {
+    column: 'title',
+    type: String
+  },
 
+  description: {
+    column: 'description',
+    type: String
+  },
+
+  AdditionalInfo: {
+    column: 'AdditionalInfo',
+    type: String
+  },
+
+  price: {
+    column: 'price',
+    type: Number
+  },
+
+  discountPrice: {
+    column: 'discountPrice',
+    type: Number
+  },
+
+  sku: {
+    column: 'sku',
+    type: String
+  },
+
+  stock: {
+    column: 'stock',
+    type: Number
+  },
+
+  brand: {
+    column: 'brand',
+    type: String
+  },
+
+  shortDescription: {
+    column: 'shortDescription',
+    type: String
+  },
+
+  Category: {
+    column: 'Category',
+    type: String
+  },
+
+  subCategory: {
+    column: 'subCategory',
+    type: String
+  },
+
+  tag: {
+    column: 'tag',
+    type: String
+  },
+
+  status: {
+    column: 'status',
+    type: String
+  },
+
+  field: {
+    column: 'field',
+    type: String
+  },
+
+  imageUrl: {
+    column: 'images.url',
+    type: String
+  },
+
+  isMain: {
+    column: 'images.isMain',
+    type: Boolean
+  }
+}
 
 const createProductController = async (req, res) => {
     try {
@@ -15,9 +97,9 @@ const createProductController = async (req, res) => {
         if (isInvalid) return;
 
         const numericPrice = Number(price);
-        const numericDiscount = Number(discountPrice);
+        const numericDiscount = Number(discountPrice) || 0;
 
-        if (numericDiscount && numericDiscount > numericPrice) {
+        if (numericDiscount < 0 || numericDiscount > 100){
             return res.status(400).json({
                 success: false,
                 message: "Discount price can't be greater than price"
@@ -35,7 +117,7 @@ const createProductController = async (req, res) => {
         let images = [];
         (req.files || []).forEach((item, index) => {
             images.push({
-                // url: `https://ecobazar-backend-1qs6.onrender.com/uploads/${item.path}`,
+                url: `https://ecobazar-backend-1qs6.onrender.com/uploads/${item.path}`,
                 url: item.path,
                 isMain: isMain == index
             });
@@ -70,13 +152,16 @@ const createProductController = async (req, res) => {
 
 const getProductControllers = async (req,res) =>{
     try {
-        let product = await Product.find({})
+         const section = req.query.section
+        const product = await Product.find(section ? { section } : {})
 
         res.json({
             success: true,
             product
         })
     } catch (error) {
+        console.log(error,"Get all product Error");
+
         res.json({
             success: false,
             message: 'Surver Error'
@@ -167,7 +252,7 @@ const ProductUpdateController = async (req, res) => {
         let newImages = [];
         if (req.files && req.files.length > 0) {
             newImages = req.files.map((item, index) => ({
-                // url: `https://ecobazar-backend-1qs6.onrender.com/uploads/${item.path}`,
+                url: `https://ecobazar-backend-1qs6.onrender.com/uploads/${item.path}`,
                 url: item.path,
                 isMain: mainKey === `new-${index}`
             }));
@@ -199,13 +284,184 @@ const ProductUpdateController = async (req, res) => {
     }
 };
 
-const bulkCreateProductController = async (req,res) =>{
-    // console.log(req.file);
-    const data = await readSheet(`./${req.file.path}`)
+const bulkCreateProductController = async (req, res) => {
 
-    // readExcelFile("../uploads/1789424995841-637417465-dummy-data.xlsx", { trim: false })
-    console.log(data);
+    try {
 
+        if (!req.file) {
+            return res.status(400).json({
+                success: false,
+                message: "Excel file is required"
+            })
+        }
+
+
+        const { objects, errors } = await readSheet(
+            `./${req.file.path}`,
+            { schema }
+        )
+
+        if (errors?.length) {
+            return res.status(400).json({
+                success: false,
+                message: "Excel data validation failed",
+                errors
+            })
+        }
+
+        const products = []
+        for (const item of objects) {
+            const rawUrls = item.imageUrl
+                ? item.imageUrl.split(",").map(u => u.trim())
+                : []
+
+        const uploadedImages = []
+            for (let i = 0; i < rawUrls.length; i++) {
+                const result = await cloudinary.uploader.upload(rawUrls[i], {
+                    folder: "ecobazar-products"
+                })
+                uploadedImages.push({
+                    url: result.secure_url,
+                    isMain: i === 0
+                })
+            }
+
+
+
+        products.push ({
+
+    ...item,
+
+    tag: item.tag
+        ? item.tag.split(",").map((tag) => tag.trim())
+        : [],
+
+    images: uploadedImages
+
+    })}
+
+        const createdProducts = await Product.insertMany(products)
+
+        return res.status(201).json({
+            success: true,
+            message: `${createdProducts.length} products created successfully`,
+            data: createdProducts
+        })
+
+    } catch (error) {
+
+        console.error("bulk product create error:", error)
+
+        return res.status(500).json({
+            success: false,
+            message: error.message
+        })
+    }
 }
 
-module.exports = {createProductController,getProductControllers,getsingleProductController,productDeleteController,ProductUpdateController,bulkCreateProductController}
+const bulkexportController = async (req, res) => {
+  try {
+    const products = await Product.find().lean();
+
+    const rows = [];
+
+    // Header
+    rows.push([
+      { value: "Title", type: String },
+      { value: "Description", type: String },
+      { value: "Additional Info", type: String },
+      { value: "Price", type: String },
+      { value: "Discount Price", type: String },
+      { value: "SKU", type: String },
+      { value: "Stock", type: String },
+      { value: "Brand", type: String },
+      { value: "Short Description", type: String },
+      { value: "Category", type: String },
+      { value: "Sub Category", type: String },
+      { value: "Tag", type: String },
+      { value: "Status", type: String },
+      { value: "Field", type: String },
+      { value: "Image URL", type: String },
+      { value: "Main Image", type: String }
+    ]);
+
+    // Every product = one Excel row
+    for (const item of products) {
+
+      const tags = item.tag
+        ? item.tag.join(",")
+        : "";
+
+      const imageUrls = item.images
+        ? item.images
+            .map(image => image.url)
+            .join(",")
+        : "";
+
+      const mainImage = item.images
+        ? item.images.find(image => image.isMain)?.url || ""
+        : "";
+
+      rows.push([
+        { value: item.title || "", type: String },
+
+        { value: item.description || "", type: String },
+
+        { value: item.AdditionalInfo || "", type: String },
+
+        { value: item.price ?? 0, type: Number },
+
+        { value: item.discountPrice ?? 0, type: Number },
+
+        { value: item.sku || "", type: String },
+
+        { value: item.stock ?? 0, type: Number },
+
+        { value: item.brand || "", type: String },
+
+        { value: item.shortDescription || "", type: String },
+
+        { value: item.Category || "", type: String },
+
+        { value: item.subCategory || "", type: String },
+
+        { value: tags, type: String },
+
+        { value: item.status || "", type: String },
+
+        { value: item.field || "", type: String },
+
+        { value: imageUrls, type: String },
+
+        { value: mainImage, type: String }
+      ]);
+    }
+
+    // Create Excel
+    const buffer = await writeXlsxFile(rows).toBuffer();
+
+    res.setHeader(
+      "Content-Type",
+      "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet"
+    );
+
+    res.setHeader(
+      "Content-Disposition",
+      "attachment; filename=products.xlsx"
+    );
+
+    res.send(buffer);
+
+  } catch (error) {
+
+    console.log("EXPORT ERROR:", error);
+
+    res.status(500).json({
+      success: false,
+      message: "Bulk export failed",
+      error: error.message
+    });
+  }
+};
+
+module.exports = {createProductController,getProductControllers,getsingleProductController,productDeleteController,ProductUpdateController,bulkCreateProductController,bulkexportController}
