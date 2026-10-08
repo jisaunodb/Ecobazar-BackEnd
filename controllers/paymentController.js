@@ -319,7 +319,7 @@ const Order = require("../models/orderModel");
 const Product = require("../models/ProductModel");
 
 // const BACKEND_URL = process.env.BACKEND_URL || "http://localhost:5000";
-const BACKEND_URL = process.env.BACKEND_URL || "ttps://ecobazar-backend-1qs6.onrender.com";
+const BACKEND_URL = process.env.BACKEND_URL || "https://ecobazar-backend-1qs6.onrender.com";
 // const FRONTEND_URL = process.env.FRONTEND_URL || "http://localhost:5173";
 const FRONTEND_URL = process.env.FRONTEND_URL || "https://eco-front-end-coral.vercel.app";
 const AAMARPAY_URL = process.env.AAMARPAY_URL || "https://sandbox.aamarpay.com";
