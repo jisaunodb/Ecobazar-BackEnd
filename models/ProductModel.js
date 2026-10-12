@@ -72,6 +72,10 @@ const ProductSchema = new Schema({
         type : String,
         enum: ["Featured Organic Products","Just Arrived This Week"],
     },
+    slug: {
+        type: String,
+        required: true
+    },
     images:[
         {
             url: {

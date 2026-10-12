@@ -125,12 +125,15 @@ const createProductController = async (req, res) => {
 
         let sku = `${Date.now()}-${new Date().getFullYear()}`;
 
+        let slug = title.toLowercase().toString().trim().split(" ").join('-');
+
         let product = new Product({
             ...req.body,
             price: numericPrice,
             discountPrice: numericDiscount,
             sku: sku,
-            images: images
+            images: images,
+            slug: slug
         });
 
         await product.save();
